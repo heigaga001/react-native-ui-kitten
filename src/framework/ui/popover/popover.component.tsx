@@ -35,6 +35,7 @@ interface PopoverProps {
   content: React.ReactElement<any>;
   children: React.ReactElement<any>;
   visible?: boolean;
+  scrollOffset?: number;
 }
 
 interface State {
@@ -75,6 +76,7 @@ export class Popover extends React.Component<Props, State> {
       placement,
       onRequestClose,
       children,
+      scrollOffset,
     } = this.props;
 
     if (prevProps.visible !== visible) {
@@ -83,7 +85,7 @@ export class Popover extends React.Component<Props, State> {
         const { origin: popoverPosition } = this.getPopoverFrame(placement, marginOffsets);
         const style: FlexStyle = {
           left: popoverPosition.x,
-          top: popoverPosition.y,
+          top: popoverPosition.y - scrollOffset,
         };
 
         const popover: React.ReactElement<ModalComponentCloseProps> = React.cloneElement(this.popoverElement, {

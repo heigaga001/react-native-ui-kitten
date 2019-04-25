@@ -2,8 +2,10 @@ import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
-  TextProps,
+  ScrollView,
+  ViewProps,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { NavigationScreenProps } from 'react-navigation';
 import {
@@ -11,16 +13,73 @@ import {
   ThemedComponentProps,
   ThemeType,
 } from '@kitten/theme';
-import { Popover } from '@kitten/ui';
+import {
+  Button,
+  Popover,
+  PopoverProps,
+} from '@kitten/ui';
 
 type Props = & ThemedComponentProps & NavigationScreenProps;
 
-const PLACEMENT: string = 'top';
+export interface PopoverShowcaseModel {
+  placement: string;
+  visible: boolean;
+}
+
+const popovers: PopoverShowcaseModel[] = [
+  {
+    placement: 'right',
+    visible: false,
+  },
+  {
+    placement: 'right start',
+    visible: false,
+  },
+  {
+    placement: 'right end',
+    visible: false,
+  },
+  {
+    placement: 'left',
+    visible: false,
+  },
+  {
+    placement: 'left start',
+    visible: false,
+  },
+  {
+    placement: 'left end',
+    visible: false,
+  },
+  {
+    placement: 'top',
+    visible: false,
+  },
+  {
+    placement: 'top start',
+    visible: false,
+  },
+  {
+    placement: 'top end',
+    visible: false,
+  },
+  {
+    placement: 'bottom',
+    visible: false,
+  },
+  {
+    placement: 'bottom end',
+    visible: false,
+  },
+  {
+    placement: 'bottom start',
+    visible: false,
+  },
+];
 
 interface State {
-  startVisible: boolean;
-  centerVisible: boolean;
-  endVisible: boolean;
+  popovers: PopoverShowcaseModel[];
+  scrollOffset: number;
 }
 
 class PopoverScreen extends React.Component<Props, State> {
@@ -30,85 +89,62 @@ class PopoverScreen extends React.Component<Props, State> {
   };
 
   public state: State = {
-    startVisible: false,
-    centerVisible: false,
-    endVisible: false,
+    popovers: popovers,
+    scrollOffset: 0,
   };
 
-  private onStartPress = () => {
-    this.setState({
-      startVisible: !this.state.startVisible,
-    });
+  private onExamplePress = (index: number): void => {
+    const popoversCopy: PopoverShowcaseModel[] = this.state.popovers;
+    popoversCopy[index].visible = !popoversCopy[index].visible;
+    this.setState({ popovers: popoversCopy });
   };
 
-  private onCenterPress = () => {
-    this.setState({
-      centerVisible: !this.state.centerVisible,
-    });
-  };
-
-  private onEndPress = () => {
-    this.setState({
-      endVisible: !this.state.endVisible,
-    });
-  };
-
-  private createPopoverContentElement = (text?: string): React.ReactElement<TextProps> => {
-    const { text: textStyle } = this.props.themedStyle;
+  private renderPopover = (text: string): React.ReactElement<ViewProps> => {
+    const { themedStyle } = this.props;
 
     return (
-      <Text style={textStyle}>{text}</Text>
+      <View style={themedStyle.popoverContent}>
+        <Text style={themedStyle.popoverContentText}>{text}</Text>
+      </View>
     );
   };
 
-  public render(): React.ReactNode {
-    const { container, componentContainer, component, tip, text } = this.props.themedStyle;
+  private renderExample = (item: PopoverShowcaseModel, index: number): React.ReactElement<PopoverProps> => {
+    const { themedStyle } = this.props;
+    const placementLabel: string = item.placement.toUpperCase();
 
     return (
-      <View style={container}>
-        <View style={componentContainer}>
-          <Popover
-            style={component}
-            placement={`${PLACEMENT} start`}
-            visible={this.state.startVisible}
-            content={this.createPopoverContentElement('❤️')}
-            onRequestClose={this.onStartPress}>
-            <TouchableOpacity
-              style={tip}
-              onPress={this.onStartPress}>
-              <Text style={text}>{`${PLACEMENT} start`.toUpperCase()}</Text>
-            </TouchableOpacity>
-          </Popover>
-        </View>
-        <View style={componentContainer}>
-          <Popover
-            style={component}
-            placement={`${PLACEMENT}`}
-            visible={this.state.centerVisible}
-            content={this.createPopoverContentElement('💛️')}
-            onRequestClose={this.onCenterPress}>
-            <TouchableOpacity
-              style={tip}
-              onPress={this.onCenterPress}>
-              <Text style={text}>{`${PLACEMENT}`.toUpperCase()}</Text>
-            </TouchableOpacity>
-          </Popover>
-        </View>
-        <View style={componentContainer}>
-          <Popover
-            style={component}
-            placement={`${PLACEMENT} end`}
-            visible={this.state.endVisible}
-            content={this.createPopoverContentElement('💚')}
-            onRequestClose={this.onEndPress}>
-            <TouchableOpacity
-              style={tip}
-              onPress={this.onEndPress}>
-              <Text style={text}>{`${PLACEMENT} end`.toUpperCase()}</Text>
-            </TouchableOpacity>
-          </Popover>
-        </View>
-      </View>
+      <Popover
+        scrollOffset={this.state.scrollOffset}
+        key={index}
+        placement={item.placement}
+        visible={item.visible}
+        style={themedStyle.popover}
+        content={this.renderPopover(item.placement)}
+        onRequestClose={() => this.onExamplePress(index)}>
+        <Button
+          style={themedStyle.tip}
+          onPress={() => this.onExamplePress(index)}>
+          {placementLabel}
+        </Button>
+      </Popover>
+    );
+  };
+
+  private onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>): void => {
+    this.setState({ scrollOffset: event.nativeEvent.contentOffset.y });
+  };
+
+  public render(): React.ReactNode {
+    const { themedStyle } = this.props;
+
+    return (
+      <ScrollView
+        onScroll={this.onScroll}
+        style={themedStyle.container}
+        contentContainerStyle={themedStyle.content}>
+        {this.state.popovers.map(this.renderExample)}
+      </ScrollView>
     );
   }
 }
@@ -116,30 +152,38 @@ class PopoverScreen extends React.Component<Props, State> {
 export default withStyles(PopoverScreen, (theme: ThemeType) => ({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'lightgray',
   },
-  componentContainer: {
-    margin: 32,
-  },
-  component: {
-    // popover customization place
+  content: {
+    paddingVertical: 8,
+    paddingHorizontal: 96,
   },
   tip: {
-    justifyContent: 'center',
-    borderWidth: 4,
-    borderRadius: 2,
-    minWidth: 256,
-    minHeight: 64,
-    borderColor: 'black',
+    marginVertical: 14,
+    marginHorizontal: 12,
   },
   text: {
     alignSelf: 'center',
-    color: 'black',
-    fontWeight: '800',
+    color: theme['color-black'],
+  },
+  popover: {
+    backgroundColor: 'red',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  popoverContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    padding: 4,
+  },
+  popoverContentIcon: {
+    tintColor: theme['color-white'],
+    width: 16,
+    height: 16,
+    marginRight: 4,
+  },
+  popoverContentText: {
+    color: theme['color-white'],
+    fontSize: 12,
   },
 }));
-
-
-
